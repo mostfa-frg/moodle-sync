@@ -1,0 +1,19 @@
+# Your login. Anyone with this file can act as you on the portal. NEVER commit it.
+.session/
+
+# Downloaded course files and the sync history
+Course Materials/
+.sync_state.json
+*.part
+
+# Python / environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

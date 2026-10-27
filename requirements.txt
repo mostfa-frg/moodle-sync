@@ -1,0 +1,2 @@
+playwright>=1.50.0
+gdown>=6.4
