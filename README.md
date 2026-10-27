@@ -24,27 +24,21 @@ Course Materials/
     Sections/Week 1/...      <- Moodle folders keep their own structure
     Assignments/assignment1.pdf   <- teacher's instruction files only
   Cloud Computing/                <- a course whose materials are links (e.g. Google Drive)
-    Books/...                     <- downloaded from the Drive link named "Books"
-    Unit 1/...
     URLs/                         <- a clickable shortcut for EVERY link in the course
       Books.url
+      Unit 1.url
       Links.md                    <- the same links as one readable list
 ```
 
-## Courses whose materials are links (Google Drive)
+## Courses whose materials are links (Google Drive, websites)
 
-Some teachers add their files as Moodle **"URL"** items that open Google Drive. The tool handles these:
+Some teachers add their files as Moodle **"URL"** items (for example a Google Drive folder). The tool does **not**
+download what is behind those links (it could be huge). Instead, for every link it saves:
 
-- Every link is saved as a shortcut in the course's `URLs/` folder (double-click a `.url` file to open it;
-  `Links.md` lists them all). This works for any website, not only Drive.
-- If a link is a **Google Drive file or folder that is shared with "anyone with the link"**, the files are also
-  downloaded into `<course>/<link name>/`. Re-runs only fetch files that are new.
-- If the Drive link is **private** (limited to certain accounts), it can't be downloaded. The tool says so, and
-  you open the shortcut and download it yourself. Google can also temporarily block very popular files
-  ("too many downloads"); just run again later.
-- Big Drive folders (books!) can be large, so the first run may take a while. Use `--no-drive` to only save
-  the shortcuts and skip downloading.
-- Google Docs / Slides / Sheets links are saved as shortcuts only.
+- a clickable shortcut in the course's `URLs/` folder (double-click a `.url` file to open it), and
+- `URLs/Links.md`, the same links as one readable list.
+
+You open the ones you want and download them yourself.
 
 ## Options
 
@@ -52,7 +46,6 @@ Some teachers add their files as Moodle **"URL"** items that open Google Drive. 
 python moodle_sync.py --login               # log in again (e.g. wrong account / expired)
 python moodle_sync.py --course 1326 1325    # only these courses (ID = number at the end of the course page address)
 python moodle_sync.py --out "D:\University"   # save somewhere else
-python moodle_sync.py --no-drive            # only save link shortcuts, don't download Google Drive files
 python moodle_sync.py --force               # re-download everything, overwriting
 ```
 
@@ -63,9 +56,8 @@ python moodle_sync.py --force               # re-download everything, overwritin
 - If your course list can't be detected automatically, use `--course` with the IDs.
 - If a teacher *replaces* an existing file with a new version under the same name, it is not re-downloaded
   (use `--force`, or delete the old file).
-- Downloaded: files, folders, assignment instruction attachments and public Google Drive links. Not
-  downloaded: other websites' content (saved as shortcuts only), Moodle "pages", quizzes, forums, and your
-  own submitted work.
+- Downloaded: files, folders and assignment instruction attachments. Links are saved as shortcuts only.
+  Not downloaded: Moodle "pages", quizzes, forums, and your own submitted work.
 - It only reads from the portal. It never submits or changes anything.
 - The portal currently shows a certificate warning, so the tool ignores HTTPS certificate errors (same as the
   original project). Only use it on a network you trust.

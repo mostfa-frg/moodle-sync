@@ -4,7 +4,8 @@ Moodle Material Sync
 ====================
 Downloads every lecture / file / folder / assignment attachment from ALL the
 courses you are enrolled in on the college Moodle portal, into one folder per
-course. Run it again any time: it only downloads what is missing.
+course. Links (e.g. Google Drive) are saved as shortcuts, not downloaded.
+Run it again any time: it only downloads what is missing.
 
     python moodle_sync.py            # sync everything
     python moodle_sync.py --login    # force a fresh login
@@ -16,7 +17,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
@@ -31,10 +31,6 @@ APP_DIR = Path(__file__).resolve().parent
 SESSION_FILE = APP_DIR / ".session" / "portal-state.json"   # your login. NEVER share it.
 DEFAULT_OUT = APP_DIR / "Course Materials"
 STATE_NAME = ".sync_state.json"                              # remembers what was downloaded
-
-# Google Drive links we know how to download (public / "anyone with the link" only)
-DRIVE_FILE = re.compile(r"drive\.google\.com/(?:file/(?:u/\d+/)?d/|open\?id=|uc\?(?:[^#]*&)?id=)([\w-]{10,})")
-DRIVE_FOLDER = re.compile(r"drive\.google\.com/(?:drive/(?:u/\d+/)?folders/|folderview\?id=)([\w-]{10,})")
 
 
 class SessionExpired(Exception):
@@ -206,9 +202,8 @@ def discover_courses(pw, base_url: str) -> dict[str, str]:
 # The syncer
 # --------------------------------------------------------------------------
 class Syncer:
-    def __init__(self, http, base_url: str, out_dir: Path, force: bool, drive: bool = True):
+    def __init__(self, http, base_url: str, out_dir: Path, force: bool):
         self.http = http
-        self.drive = drive
         self.base_url = base_url
         self.host = urlparse(base_url).netloc
         self.out = out_dir
@@ -422,51 +417,7 @@ class Syncer:
         if urlparse(target).netloc == self.host and "/pluginfile.php/" in target:
             self.save_file(file_key(target), target, course_dir)    # link to a file on Moodle itself
             return
-        self.save_link(course_dir, info["name"], target)
-        if self.drive:
-            self.fetch_drive(info, course_dir)
-
-    def fetch_drive(self, info: dict, course_dir: Path) -> None:
-        """Download a public Google Drive file or folder into <course>/<link name>/."""
-        file_id = DRIVE_FILE.search(info["url"])
-        folder_id = DRIVE_FOLDER.search(info["url"])
-        if not (file_id or folder_id):
-            return
-        try:
-            import gdown
-        except ImportError:
-            print("    (Drive link skipped: run  pip install gdown  to download these automatically)")
-            return
-
-        target = course_dir / clean_name(info["name"], "Drive", 60)
-        try:
-            if file_id:
-                memo = "drive:" + file_id.group(1)
-                known = self.state["files"].get(memo)
-                if known and (self.out / known).is_file() and not self.force:
-                    self.existing += 1
-                    return
-                target.mkdir(parents=True, exist_ok=True)
-                saved = gdown.download(id=file_id.group(1), output=str(target) + os.sep, quiet=False, resume=True)
-                if not saved:
-                    raise RuntimeError("no file received")
-                self.state["files"][memo] = self.rel(Path(saved))
-                self.new += 1
-                print(f"    NEW     {self.rel(Path(saved))}")
-            else:
-                print(f"    Checking Google Drive folder '{target.name}' ...")
-                target.mkdir(parents=True, exist_ok=True)
-                before = {f for f in target.rglob("*") if f.is_file()}
-                gdown.download_folder(id=folder_id.group(1), output=str(target), quiet=True, resume=True)
-                after = {f for f in target.rglob("*") if f.is_file()}
-                for f in sorted(after - before):
-                    print(f"    NEW     {self.rel(f)}")
-                self.new += len(after - before)
-                self.existing += len(before)
-        except Exception as error:
-            print(f"    FAILED  Drive link '{info['name']}': {str(error).splitlines()[0][:150] if str(error) else error}")
-            print("            (it may be private - open the shortcut in URLs/ and request access)")
-            self.failed += 1
+        self.save_link(course_dir, info["name"], target)      # we only save the link; you open/download it yourself
 
     # ---- one course -------------------------------------------------------
     def course_folder(self, course_id: str, title: str) -> Path:
@@ -559,7 +510,7 @@ def run(args) -> None:
                 print(f"Found {len(courses)} course(s). Saving into: {out_dir}")
 
                 http = new_http(pw)
-                syncer = Syncer(http, base_url, out_dir, args.force, not args.no_drive)
+                syncer = Syncer(http, base_url, out_dir, args.force)
                 try:
                     for course_id, hint in courses.items():
                         syncer.sync_course(course_id, hint)
@@ -588,7 +539,6 @@ def main() -> None:
     parser.add_argument("--out", default=str(DEFAULT_OUT), help="where to save (default: 'Course Materials' next to this script)")
     parser.add_argument("--course", nargs="+", metavar="ID", help="only sync these course IDs")
     parser.add_argument("--login", action="store_true", help="force a fresh login")
-    parser.add_argument("--no-drive", action="store_true", help="do not download Google Drive links (only save shortcuts)")
     parser.add_argument("--force", action="store_true", help="re-download everything, overwriting files")
     parser.add_argument("--base-url", default=DEFAULT_BASE_URL, help="portal address")
     parser.add_argument("--no-pause", action="store_true", help="do not wait for Enter at the end")
