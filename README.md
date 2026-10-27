@@ -3,6 +3,8 @@
 Downloads all your course files from the college Moodle portal into one folder per course.
 Run it again whenever you want: **it only downloads what is missing.**
 
+🎥 **Video walkthrough:** https://youtu.be/s4cg7wucTpE
+
 ## Use it
 
 1. Install Python 3.10+ (https://www.python.org/downloads/ - tick "Add Python to PATH" on Windows).
