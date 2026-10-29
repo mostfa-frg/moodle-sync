@@ -51,6 +51,15 @@ python moodle_sync.py --out "D:\University"   # save somewhere else
 python moodle_sync.py --force               # re-download everything, overwriting
 ```
 
+## If something goes wrong
+
+- **"Playwright is not installed"**: the tool now offers to install it. Type `Y` and press Enter, and it
+  carries on by itself. The launcher also repairs a broken setup automatically.
+- Still stuck? Delete the `.venv` folder and run it again. Your login (`.session`) and downloaded files
+  (`Course Materials`) are not affected, so you won't log in or download everything again.
+- Tip: keep this folder outside OneDrive / synced folders. `.venv` contains thousands of small files that
+  slow syncing down for no benefit.
+
 ## Good to know
 
 - **Already-downloaded files are safe.** If a file with the same name is already in the course folder

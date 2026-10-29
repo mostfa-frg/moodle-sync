@@ -16,6 +16,7 @@ Nothing is ever uploaded or submitted to the portal. It only reads.
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import re
 import subprocess
@@ -482,11 +483,37 @@ class Syncer:
 # --------------------------------------------------------------------------
 # Main
 # --------------------------------------------------------------------------
-def run(args) -> None:
+def load_playwright():
+    """Import Playwright. If it is missing, offer to install it and carry on."""
+    try:
+        from playwright.sync_api import sync_playwright
+        return sync_playwright
+    except ImportError:
+        pass
+
+    print("\nPlaywright is not installed (the tool needs it to log in and read the portal).")
+    if sys.stdin and sys.stdin.isatty():
+        answer = input("Install it now? [Y/n] ").strip().lower()
+    else:
+        answer = "y"
+    if answer in ("n", "no"):
+        sys.exit("Okay. Install it yourself with:  pip install playwright   then run this again.")
+
+    print("Installing Playwright...\n")
+    result = subprocess.run([sys.executable, "-m", "pip", "install", "playwright>=1.50.0"])
+    if result.returncode != 0:
+        sys.exit("\nThe install failed. Check your internet, then try:  pip install playwright")
+    importlib.invalidate_caches()
     try:
         from playwright.sync_api import sync_playwright
     except ImportError:
-        sys.exit("Playwright is not installed. Run:  pip install playwright")
+        sys.exit("\nInstalled, but Python still cannot find it. Close this window and run again.")
+    print("\nPlaywright installed. Continuing...\n")
+    return sync_playwright
+
+
+def run(args) -> None:
+    sync_playwright = load_playwright()
 
     base_url = args.base_url if args.base_url.endswith("/") else args.base_url + "/"
     out_dir = Path(args.out).expanduser().resolve()
